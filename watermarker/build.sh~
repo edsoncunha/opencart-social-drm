@@ -1,0 +1,2 @@
+cd tests
+phpunit pdfwatermark-test.php
