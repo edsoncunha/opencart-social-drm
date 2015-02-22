@@ -1,0 +1,118 @@
+<modification>
+	<id>Admin Order Downloads Links for OpenCart</id>
+	<version>1.0.0</version>
+	<vqmver>2.4.0</vqmver>
+	<author>garudacrafts</author>
+	<notes>Description: adds hyperlinks to Order Downloads on Admin Order Info page</notes>
+		
+	<file name="admin/controller/sale/order.php">
+		<operation>
+			<search position="after"><![CDATA[
+			$result['mask'],
+			]]></search>
+			<add><![CDATA[
+			'href'  => $this->url->link('sale/order/digital_download', 'token=' . $this->session->data['token'] . '&order_download_id=' . $result['order_download_id'], 'SSL'),
+			]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[
+			function download()
+			]]></search>
+			<add><![CDATA[
+			public function digital_download() {
+				$this->load->model('sale/order');
+				
+				if (isset($this->request->get['order_download_id'])) {
+					$order_download_id = $this->request->get['order_download_id'];
+				} else {
+					$order_download_id = 0;
+				}
+				
+				$download_info = $this->model_sale_order->getDigitalDownload($order_download_id);
+				
+				if ($download_info) {
+					$file = DIR_DOWNLOAD . $download_info['filename'];
+					$mask = basename($download_info['mask']);
+
+					if (!headers_sent()) {
+						if (file_exists($file)) {
+							header('Content-Type: application/octet-stream');
+							header('Content-Description: File Transfer');
+							header('Content-Disposition: attachment; filename="' . ($mask ? $mask : basename($file)) . '"');
+							header('Content-Transfer-Encoding: binary');
+							header('Expires: 0');
+							header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+							header('Pragma: public');
+							header('Content-Length: ' . filesize($file));
+							
+							readfile($file, 'rb');
+														
+							exit;
+						} else {
+							exit('Error: Could not find file ' . $file . '!');
+						}
+					} else {
+						exit('Error: Headers already sent out!');
+					}
+				} else {
+					$this->load->language('error/not_found');
+
+					$this->document->setTitle($this->language->get('heading_title'));
+
+					$this->data['heading_title'] = $this->language->get('heading_title');
+
+					$this->data['text_not_found'] = $this->language->get('text_not_found');
+
+					$this->data['breadcrumbs'] = array();
+
+					$this->data['breadcrumbs'][] = array(
+						'text'      => $this->language->get('text_home'),
+						'href'      => $this->url->link('common/home', 'token=' . $this->session->data['token'], 'SSL'),
+						'separator' => false
+					);
+
+					$this->data['breadcrumbs'][] = array(
+						'text'      => $this->language->get('heading_title'),
+						'href'      => $this->url->link('error/not_found', 'token=' . $this->session->data['token'], 'SSL'),
+						'separator' => ' :: '
+					);
+				
+					$this->template = 'error/not_found.tpl';
+					$this->children = array(
+						'common/header',
+						'common/footer'
+					);
+				
+					$this->response->setOutput($this->render());
+				}	
+			}
+			]]></add>
+		</operation>
+	</file>
+	
+	<file name="admin/model/sale/order.php">
+		<operation>
+			<search position="before"><![CDATA[
+			function getOrderDownloads(
+			]]></search>
+			<add><![CDATA[
+			public function getDigitalDownload($order_download_id) {
+				$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_download WHERE  order_download_id = '" . (int)$order_download_id . "'");
+				return $query->row;
+			}
+			]]></add>
+		</operation>
+	</file>
+	
+	<file name="admin/view/template/sale/order_info.tpl">
+		<operation>
+			<search position="replace"><![CDATA[
+			<?php echo $download['filename']; ?>
+			]]></search>
+			<add><![CDATA[
+			<a href="<?php echo $download['href']; ?>"><?php echo $download['filename']; ?></a>
+			]]></add>
+		</operation>
+	</file>
+			
+</modification>

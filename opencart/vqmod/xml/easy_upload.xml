@@ -1,0 +1,158 @@
+<!--
+  Copyright (C) 2012 Tri Le <trile7 at gmail dot com>
+
+  You may make copies of this program as may be necessary for backup and archival purposes.
+
+  You may not distribute registered copies of this program to third parties.
+
+  You may not rent, lease, or lend this program.
+
+  this program is provided 'As Is' without any express or implied warranty of any kind, including but not limited to any warranties of merchantability, noninfringement, or fitness of a particular purpose. Tri Le does not warrant or assume responsibility for the accuracy or completeness of any information, text, graphics, links or other items contained within this program. Tri Le makes no warranties respecting any harm that may be caused by the transmission of a computer virus, worm, time bomb, logic bomb, or other such computer program.
+
+  In no event shall Tri Le be liable for any damages (including, without limitation, lost profits, business interruption, or lost information) rising out of 'Authorized Users' use of or inability to use this program.
+-->
+
+<modification>
+  <id>Easy Upload - Sync download folder and database</id>
+  <version>0.2.3</version>
+  <vqmver>2.3</vqmver>
+  <author>Tri Le</author>
+
+  <file name="admin/view/template/catalog/download_list.tpl">
+    <operation>
+      <search position="after" index="1"><![CDATA[
+        <div class="content">
+      ]]></search>
+        <add><![CDATA[
+<!-- tri mod start -->
+<div id="easyupload" style="border-bottom:1px solid #DDDDDD; margin-bottom:10px;">
+  <h2>Easy Upload - Version 0.2.3</h2>
+  <form action="index.php?route=catalog/download&token=<?php echo $this->session->data['token']; ?>" method="post">
+    <ol>
+      <li>Upload files to <span style="background:yellow;"><?php echo DIR_DOWNLOAD; ?></span> folder using your favorite file transfer tool (i.e. filezilla, winscp, fireftp, etc.)</li>
+      <li>
+        Total downloads allowed: <input type="text" name="remaining" value="<?php echo $this->config->get('easy_upload_remaining'); ?>" size="3" />
+        <input type="checkbox" name="apply_existing" value="1" id="apply_existing" /><label for="apply_existing">Apply to existed downloads</label>
+        <input type="submit" name="sync" value="Synchronize" class="button" />
+        <span class="help">(This adds new files to database and removes entries pointing to non-existing files from database)</span>
+      </li>
+    </ol>
+  </form>
+  <form action="index.php?route=catalog/download&token=<?php echo $this->session->data['token']; ?>" method="post">
+    On storefront, sort download by:
+    <select name="easyupload_download_sort">
+      <option value="o.date_added">Date Added</option>
+      <option value="od.name" <?php if ($easyupload_download_sort == "od.name") echo "selected"; ?>>Name</option>
+      <option value="od.remaining" <?php if ($easyupload_download_sort == "od.remaining") echo "selected"; ?>>Remaining</option>
+    </select>
+    <select name="easyupload_download_sort">
+      <option value="ASC">Ascending</option>
+      <option value="DESC" <?php if ($easyupload_download_order == "DESC") echo "selected"; ?>>Descending</option>
+    </select>
+    <input type="submit" name="save" value="Save" class="button" />
+  </form>
+</div>
+<!-- tri mod end -->
+        ]]></add>
+    </operation>
+  </file>
+
+  <file name="admin/controller/catalog/download.php">
+    <operation>
+      <search position="after"><![CDATA[
+        function index
+      ]]></search>
+        <add><![CDATA[
+//tri mod start
+$this->load->model("setting/setting");
+
+if (isset($this->request->post["sync"])) {
+  $this->load->model("catalog/download");
+  $this->session->data["success"] = $this->model_catalog_download->syncDownloadDb($this->request->post["remaining"]);
+
+  $this->model_setting_setting->editSetting("easy_upload", array("easy_upload_remaining" => $this->request->post["remaining"]));
+}
+
+if (isset($this->request->post["save"])) {
+  $this->model_setting_setting->editSetting("easyupload", $this->request->post);
+}
+
+$setting = $this->model_setting_setting->getSetting("easyupload");
+$this->data["easyupload_download_sort"] = isset($setting["easyupload_download_sort"]) ? $setting["easyupload_download_sort"] : "";
+$this->data["easyupload_download_order"] = isset($setting["easyupload_download_order"]) ? $setting["easyupload_download_order"] : "";
+//tri mod end
+        ]]></add>
+    </operation>
+  </file>
+
+  <file name="admin/model/catalog/download.php">
+    <operation>
+      <search position="before"><![CDATA[
+        function addDownload
+      ]]></search>
+      <add><![CDATA[
+//tri mod start
+function syncDownloadDb($remaining=999) {
+  $files = glob(DIR_DOWNLOAD . "*");
+
+  $db_files = array();
+  $rm_ids = array();
+
+  $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "download");
+  foreach ($query->rows as $r) {
+    $db_files[] = $r["filename"];
+    if (!in_array(DIR_DOWNLOAD . $r["filename"], $files)) $rm_ids[] = $r["download_id"];
+  }
+
+  $added = 0;
+
+  foreach ($files as $f) {
+    $filename = basename($f);
+
+    if (!in_array($filename, $db_files) && $filename != "index.html") {
+      $added++;
+      $this->db->query("INSERT INTO " . DB_PREFIX . "download SET filename='" . $this->db->escape($filename) . "', mask='" . $this->db->escape($filename) . "', remaining='" . (int)$remaining . "', date_added=NOW()");
+
+      $download_id = $this->db->getLastId();
+      $this->db->query("INSERT INTO " . DB_PREFIX . "download_description SET download_id='" . (int)$download_id . "', name='" . $this->db->escape($filename) . "', language_id='" . (int)$this->config->get("config_language_id") . "'");
+    }
+  }
+
+  if ($rm_ids) {
+    $this->db->query("DELETE FROM " . DB_PREFIX . "download WHERE download_id IN (" . implode(",", $rm_ids) . ")");
+    $this->db->query("DELETE FROM " . DB_PREFIX . "download_description WHERE download_id IN (" . implode(",", $rm_ids) . ")");
+    $this->db->query("DELETE FROM " . DB_PREFIX . "product_to_download WHERE download_id IN (" . implode(",", $rm_ids) . ")");
+  }
+
+  if (isset($this->request->post["apply_existing"])) $this->db->query("UPDATE " . DB_PREFIX . "download SET remaining='" . (int)$remaining . "'");
+
+  return "$added files added to database.  " . count($rm_ids) . " entries removed from database.";
+}
+//tri mod end
+      ]]></add>
+    </operation>
+    <operation>
+      <search position="after"><![CDATA[
+        function deleteDownload
+      ]]></search>
+      <add><![CDATA[
+//tri mod start
+$filepath = DIR_DOWNLOAD . $this->db->query("SELECT * FROM " . DB_PREFIX . "download WHERE download_id='" . (int)$download_id . "'")->row["filename"];
+if (file_exists($filepath)) unlink($filepath);
+//tri mod end
+      ]]></add>
+    </operation>
+  </file>
+
+  <file name="catalog/model/account/download.php">
+    <operation error="log">
+      <search position="replace"><![CDATA[
+        ORDER BY o.date_added DESC
+      ]]></search>
+      <add trim="true"><![CDATA[
+ORDER BY " . ($this->config->get("easyupload_download_sort") ? $this->config->get("easyupload_download_sort") : "o.date_added") . " " . ($this->config->get("easyupload_download_order") ? $this->config->get("easyupload_download_order") : "DESC") . "
+      ]]></add>
+    </operation>
+  </file>
+
+</modification>
