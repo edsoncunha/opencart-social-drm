@@ -1,0 +1,41 @@
+<?php
+
+$parent_directory = dirname(__FILE__);
+
+require_once($parent_directory."/../fpdf/fpdf.php");
+require_once($parent_directory."/../fpdi/fpdi.php");
+require_once($parent_directory."/../pdfwatermarker/pdfwatermarker.php");
+require_once($parent_directory."/../pdfwatermarker/pdfwatermark.php");
+
+class PDFWatermarker_test extends PHPUnit_Framework_TestCase
+{
+    public $watermark;
+    public $watermarker;
+    public $output;
+	public $parent_directory;
+
+    function setUp() {
+		
+		$this->parent_directory = dirname(__FILE__);
+		
+        $this->watermark = new PDFTextWatermark($this->parent_directory.'/../assets/star.png');
+
+        $this->output = $this->parent_directory ."/../assets/test-output.pdf";
+
+        $this->watermarker = new PDFWatermarker($this->parent_directory.'/../assets/test.pdf', $this->output, $this->watermark); 
+		
+    }
+
+    	/* 
+	 * Test watermark as background
+	 * 
+	 * @return void
+	 */
+    public function testAsOverlay() {
+		$this->watermark->setAsOverlay();
+        $this->watermarker->savePdf(); 
+        $this->assertTrue( file_exists($this->output) === true );
+		$this->assertTrue( filesize($this->parent_directory.'/../assets/output-as-overlay.pdf') === filesize($this->output) );
+    }
+	
+}
