@@ -144,7 +144,11 @@ class ControllerAccountDownload extends Controller {
             
             if (strpos($mask, 'pdf') !== false) {
                 $output = sys_get_temp_dir() . '/' . md5(uniqid(rand(), true));
-                $watermark = "Licenciado para Edson Cunha às 11h32. " . $output;
+                //$this->customer->
+                $customer_name = $this->customer->getFirstName() . ' ' . $this->customer->getLastName();
+                $customer_phone =  $this->customer->getTelephone();
+                $customer_email = $this->customer->getEmail();
+                $watermark = "Licenciado para " . $customer_name . ' - E-mail: ' . $customer_email . ' - Telefone: ' . $customer_phone;
                 $watermarker = new PDFWatermarker($file, $output, $watermark);
                 $watermarker->savePdf();
                 $file = $output;
