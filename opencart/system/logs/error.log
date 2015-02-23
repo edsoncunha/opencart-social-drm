@@ -10,3 +10,4 @@
 2015-02-20 1:22:04 - PHP Notice:  Indirect modification of overloaded property ControllerCatalogDownload::$data has no effect in /var/www/html/opencart/vqmod/vqcache/vq2-admin_controller_catalog_download.php on line 23
 2015-02-20 1:22:10 - PHP Notice:  Indirect modification of overloaded property ControllerCatalogDownload::$data has no effect in /var/www/html/opencart/vqmod/vqcache/vq2-admin_controller_catalog_download.php on line 22
 2015-02-20 1:22:10 - PHP Notice:  Indirect modification of overloaded property ControllerCatalogDownload::$data has no effect in /var/www/html/opencart/vqmod/vqcache/vq2-admin_controller_catalog_download.php on line 23
+2015-02-23 1:22:16 - PHP Warning:  fopen(/tmpa91d4453b72f68a9341fcbd3ab1c1c7b): failed to open stream: Permission denied in /var/www/html/opencart/watermarker/fpdf/fpdf.php on line 1025
