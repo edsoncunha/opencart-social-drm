@@ -144,7 +144,6 @@ class ControllerAccountDownload extends Controller {
             
             if (strpos($mask, 'pdf') !== false) {
                 $output = sys_get_temp_dir() . '/' . md5(uniqid(rand(), true));
-                //$this->customer->
                 $customer_name = $this->customer->getFirstName() . ' ' . $this->customer->getLastName();
                 $customer_phone =  $this->customer->getTelephone();
                 $customer_email = $this->customer->getEmail();

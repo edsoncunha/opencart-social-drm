@@ -1,0 +1,30 @@
+<modification>
+	<id><![CDATA[Social DRM plugin]]></id>
+	<version><![CDATA[1.0]]></version>
+	<vqmver><![CDATA[2.1.5]]></vqmver>
+	<author><![CDATA[Edson Cunha - edsoncamposcunha@gmail.com]]></author>
+	<file name="catalog/controller/account/download.php">
+		<operation>
+			<search position="after"><![CDATA[$mask = basename($download_info['mask']);]]></search>
+			<add><![CDATA[	//inserido pelo social drm
+	if (strpos($mask, 'pdf') >= 0) {
+		$output = sys_get_temp_dir() . '/' . md5(uniqid(rand(), true));
+		$customer_name = $this->customer->getFirstName() . ' ' . $this->customer->getLastName();
+		$customer_phone =  $this->customer->getTelephone();
+		$customer_email = $this->customer->getEmail();
+		$watermark = "Licenciado para " . $customer_name . ' - E-mail: ' . $customer_email . ' - Telefone: ' . $customer_phone;
+		$watermarker = new PDFWatermarker($file, $output, $watermark);
+		$watermarker->savePdf();
+		$file = $output;
+	}]]></add>
+		</operation>
+		<operation>
+			<search position="before"><![CDATA[class ControllerAccountDownload extends Controller]]></search>
+			<add><![CDATA[$parent_directory = dirname(__FILE__);
+
+require_once("watermarker/fpdf/fpdf.php");
+require_once("watermarker/fpdi/fpdi.php");
+require_once("watermarker/pdfwatermarker.php");]]></add>
+		</operation>
+	</file>
+</modification>

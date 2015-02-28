@@ -1,4 +1,11 @@
 <?php
+
+$parent_directory = dirname(__FILE__);
+
+require_once($parent_directory . "/../../../watermarker/fpdf/fpdf.php");
+require_once($parent_directory . "/../../../watermarker/fpdi/fpdi.php");
+require_once($parent_directory . "/../../../watermarker/pdfwatermarker.php");
+
 class ControllerCatalogDownload extends Controller {
 	private $error = array();
 
