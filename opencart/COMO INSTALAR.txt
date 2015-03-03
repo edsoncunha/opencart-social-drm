@@ -1,0 +1,9 @@
+COMO INSTALAR O PLUGIN SOCIAL DRM:
+
+1 - Copiar a pasta "watermarker" para a pasta-raiz da loja virtual.
+
+2 - Copiar o arquivo watermarker/social-drm.xml para a pasta [pasta-raiz]/vqmod/xml
+
+3 - Na seção Administração -> Catálogo -> Downloads, todos os itens da listagem correspondentes a livros em formato pdf devem terminar com ".pdf" no campo "Máscara". É preciso clicar na edição de cada uma das linhas e editar o referido campo. Isso é necessário para que o assinador não tente assinar indevidamente outros tipos de arquivo.
+
+3.1 - OBSERVAÇÃO: para ativar o assinador para compras anteriores à ativação do plugin de Social DRM, é preciso editar o campo "Máscara" correspondente a essas compras diretamente no banco de dados. Isso ocorre porque as compras realizadas no Open Cart utilizam o valor do campo "Máscara" correspondente à época em que foram realizadas. Recomenda-se fortemente fazer um backup do banco de dados antes de realizar esta operação. 

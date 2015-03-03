@@ -13,6 +13,25 @@
 		$customer_phone =  $this->customer->getTelephone();
 		$customer_email = $this->customer->getEmail();
 		$watermark = "Licenciado para " . $customer_name . ' - E-mail: ' . $customer_email . ' - Telefone: ' . $customer_phone;
+				$this->load->model('account/address');				
+				$address = $this->model_account_address->getAddress($this->customer->getAddressId());
+				if ($address !== false) {
+					$cpf = $address['tax_id'];
+					$rg = $address['company_id'];
+
+					if (!empty($cpf)) {
+						$cpf = preg_replace("[^0-9]", "", $cpf);
+						$cpf = substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . 
+				                '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+						$watermark = $watermark . ' - CPF: ' .  $cpf;
+					}
+
+					if (!empty($rg)) {
+						$watermark = $watermark . ' - RG: ' .  $rg;
+					}
+									
+				}
+
 		$watermarker = new PDFWatermarker($file, $output, $watermark);
 		$watermarker->savePdf();
 		$file = $output;
